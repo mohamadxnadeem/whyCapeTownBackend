@@ -24,4 +24,10 @@ urlpatterns = [
 
     path('', TemplateView.as_view(template_name='index.html')),
     path('api/users/', include('base.urls.user_urls')),
+
+    path('api/blogs/', include('base.urls.blogPost_urls')),
+    path('api/bnbs/', include('base.urls.bnbRental_urls')),
+    path('api/booking/', include('base.urls.booking_urls')),
+    path('api/experience/', include('base.urls.exoerience_urls')),
+    path('api/vehicleRental/', include('base.urls.vehicleRetnal_urls')),
 ]
