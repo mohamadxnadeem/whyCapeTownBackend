@@ -13,8 +13,8 @@ from rest_framework import status
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from base.models import Product, Review
-from base.serializers import ProductSerializer
+from base.models import Experience, Review
+from base.serializers import ExperienceSerializer
 
 #====================================================
 
@@ -23,32 +23,32 @@ from base.serializers import ProductSerializer
 #====================================================
 
 @api_view(['GET'])
-def getProducts(request):
+def getExperiences(request):
     query = request.query_params.get('keyword')
 
     if query == None:
         query = ''
 
-    products = Product.objects.filter(name__icontains=query)
+    Experiences = Experience.objects.filter(name__icontains=query)
 
     page = request.query_params.get('page')
-    paginator = Paginator(products, 8)
+    paginator = Paginator(Experiences, 8)
 
     try:
-        products = paginator.page(page)
+        Experiences = paginator.page(page)
     except PageNotAnInteger:
-        products = paginator.page(1)
+        Experiences = paginator.page(1)
     except EmptyPage:
-        products = paginator.page(paginator.num_pages)
+        Experiences = paginator.page(paginator.num_pages)
 
     if page == None:
         page = 1
 
     page = int(page)
 
-    serializer = ProductSerializer(products, many=True)
+    serializer = ExperienceSerializer(Experiences, many=True)
     return Response({
-        'products':serializer.data,
+        'Experiences':serializer.data,
         'page':page,
         'pages':paginator.num_pages
     })
@@ -56,17 +56,17 @@ def getProducts(request):
 #====================================================
 
 @api_view(['GET'])
-def getTopProducts(request):
-    products = Product.objects.filter(rating__gt=4).order_by('-rating')[0:5]
-    serializer = ProductSerializer(products, many=True)
+def getTopExperiences(request):
+    experiences = Experience.objects.filter(rating__gt=4).order_by('-rating')[0:5]
+    serializer = ExperienceSerializer(experience, many=True)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['GET'])
-def getProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    serializer = ProductSerializer(product, many=False)
+def getExperience(request, pk):
+    experience = Experience.objects.get(_id=pk)
+    serializer = ExperienceSerializer(experience, many=False)
     
     return Response(serializer.data)
 
@@ -74,50 +74,48 @@ def getProduct(request, pk):
 
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
-def updateProduct(request, pk):
+def updateExperience(request, pk):
     data = request.data
-    product = Product.objects.get(_id=pk)
+    experience = Experience.objects.get(_id=pk)
 
-    product.name = data['name']
-    product.price = data['price']
-    product.brand = data['brand']
-    product.countInStock = data['countInStock']
-    product.category = data['category']
-    product.description = data['description']
+    experience.name = data['name']
+    experience.images = data['images']
+    experience.videos = data['videos']
+    experience.price = data['price']
+    experience.description = data['description']
 
-    product.save()
+    experience.save()
 
-    serializer = ProductSerializer(product, many=False)  
+    serializer = ExperienceSerializer(experience, many=False)  
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
-def createProduct(request):
+def createExperience(request):
     user = request.user
 
-    product = Product.objects.create(
+    experience = Experience.objects.create(
         user=user,
         name='Sample Name',
         price=0,
-        brand='Sample Brand',
-        countInStock=0,
-        category='Sample Category',
+        images='Sample Image',
+        videos=0,
         description='',
     )
 
-    serializer = ProductSerializer(product, many=False)
+    serializer = ExperienceSerializer(product, many=False)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['DELETE'])
 @permission_classes([IsAdminUser])
-def deleteProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    product.delete()    
-    return Response('Product Deleted')
+def deleteExperience(request, pk):
+    experience = Experience.objects.get(_id=pk)
+    experience.delete()    
+    return Response('Experience Deleted')
 
 
 #====================================================
@@ -138,16 +136,16 @@ def uploadImage(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def createProductReview(request, pk):
+def createExperienceReview(request, pk):
     user = request.user
-    product = Product.objects.get(_id=pk)
+    experience = Experience.objects.get(_id=pk)
     data = request.data
 
     #1 - Review already exists
-    alreadyExists = product.review_set.filter(user=user).exists()
+    alreadyExists = experience.review_set.filter(user=user).exists()
 
     if alreadyExists:
-        content = {'detail':'Product already reviewed'}
+        content = {'detail':'Experience already reviewed'}
         return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
     #2 - No Raiting or 0
@@ -159,21 +157,21 @@ def createProductReview(request, pk):
     else:
         review = Review.objects.create(
             user=user,
-            product=product,
+            experience=experience,
             name=user.first_name,
             rating=data['rating'],
             comment=data['comment'],
         )
 
-        reviews = product.review_set.all()
-        product.numReviews = len(reviews)
+        reviews = experience.review_set.all()
+        experience.numReviews = len(reviews)
 
         total = 0
         for i in reviews:
             total += i.rating
 
-        product.rating = total / len(reviews)
-        product.save()
+        experience.rating = total / len(reviews)
+        experience.save()
 
         return Response('Review Added')
 
