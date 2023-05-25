@@ -3,13 +3,16 @@ from base.views import vehicleRental_views as views
 
 
 urlpatterns = [
-    path('', views.getUsers, name='users'),
-    path('login/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('register/', views.registerUser, name='register'),
-    path('profile/', views.getUserProfile, name='users-profile'), 
-    path('profile/update/', views.updateUserProfile, name='user-profile-update'),
-    path('<str:pk>/', views.getUserById, name='user'),
-    path('update/<str:pk>/', views.updateUser, name='user-update'),
-    path('delete/<str:pk>/', views.deleteUser, name='user-delete'),
+    # View All:
+    path('', views.getVehicles, name='Vehicles'),
+    # View Specific Item based on ID
+    path('<str:pk>/', views.getVehicle, name='getVehicle'),
+    # Create, update and delete:
+    path('createNewVehicle/', views.createVehicle, name='createNewVehicle'),
+    path('update/<str:pk>/', views.updateVehicle, name='user-update'),
+    path('delete/<str:pk>/', views.deleteVehicle, name='user-delete'),
+    # Create new review:
+    path('<str:pk>/reviews/', views.createVehicleReview, name='create-Vehicle-review'),
+
 
 ]

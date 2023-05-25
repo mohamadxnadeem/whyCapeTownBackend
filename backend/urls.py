@@ -27,8 +27,9 @@ urlpatterns = [
     path('api/experience/', include('base.urls.experience_urls')),
 
 
-    # path('api/blogs/', include('base.urls.blogPost_urls')),
-    # path('api/bnbs/', include('base.urls.bnbRental_urls')),
-    # path('api/booking/', include('base.urls.booking_urls')),
-    #  path('api/vehicleRental/', include('base.urls.vehicleRetnal_urls')),
+    path('api/blogs/', include('base.urls.blogPost_urls')),
+
+    path('api/bnbs/', include('base.urls.bnbRental_urls')),
+    path('api/booking/', include('base.urls.booking_urls')),
+    path('api/rentAVehicle/', include('base.urls.vehicleRental_urls')),
 ]

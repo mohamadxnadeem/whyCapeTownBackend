@@ -4,6 +4,7 @@ from base.views import experience_views as views
 
 urlpatterns = [
     path('', views.getExperiences, name='experiences'),
+    path('<str:pk>/', views.getExperience, name='getBlog'),
     path('create/', views.createExperience, name='experience-create'),
     path('upload/', views.uploadImage, name='image-upload'),
     path('top/', views.getTopExperiences, name='top-experiences'),

@@ -2,41 +2,44 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
-from .models import Booking, Item
-from .serializers import BookingSerializer
+from base.models import *
+from base.serializers import BookingSerializer
 from datetime import timedelta
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
-class BookingView(APIView):
-    def post(self, request, format=None):
-        # Get the data from the request
-        data = request.data.copy()
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
-        # If a user is authenticated, add the user to the data
-        if request.user.is_authenticated:
-            data.update({'user': request.user.id})
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_booking(request):
+    user = request.user
+    experience_id = request.data.get('experience_id')
+    vehicle_rental_id = request.data.get('vehicle_rental_id')
+    bnb_rental_id = request.data.get('bnb_rental_id')
+    review = request.data.get('review')
 
-        serializer = BookingSerializer(data=data)
-        if serializer.is_valid():
-            start_date = serializer.validated_data.get('start_date')
-            end_date = serializer.validated_data.get('end_date')
-            item = serializer.validated_data.get('item')
+    # Create a booking instance
+    booking = Booking.objects.create(user=user, review=review)
 
-            # Check if this item is already booked for the requested time
-            existing_bookings = Booking.objects.filter(item=item).filter(start_date__lt=end_date, end_date__gt=start_date)
+    # Link booking to experience, if provided
+    if experience_id:
+        experience = Experience.objects.get(id=experience_id)
+        booking.experience = experience
+        booking.save()
 
-            if existing_bookings.exists():
-                return Response({"error": "This item is already booked for the requested time period."}, status=status.HTTP_400_BAD_REQUEST)
+    # Link booking to vehicle rental, if provided
+    if vehicle_rental_id:
+        vehicle_rental = VehicleRental.objects.get(id=vehicle_rental_id)
+        booking.vehicle_rental = vehicle_rental
+        booking.save()
 
-            # Calculate the total price
-            num_days = (end_date - start_date).days
-            total_price = item.price * num_days
+    # Link booking to BnB rental, if provided
+    if bnb_rental_id:
+        bnb_rental = BnbRental.objects.get(id=bnb_rental_id)
+        booking.bnb_rental = bnb_rental
+        booking.save()
 
-            # Save the booking if there's no conflict
-            booking = serializer.save()
-            booking.total_price = total_price
-            booking.save()
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    serializer = BookingSerializer(booking)
+    return Response(serializer.data)

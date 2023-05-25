@@ -13,8 +13,8 @@ from rest_framework import status
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from base.models import Product, Review
-from base.serializers import ProductSerializer
+from base.models import VehicleRental, Review
+from base.serializers import VehicleRentalSerializer
 
 #====================================================
 
@@ -23,32 +23,32 @@ from base.serializers import ProductSerializer
 #====================================================
 
 @api_view(['GET'])
-def getProducts(request):
+def getVehicles(request):
     query = request.query_params.get('keyword')
 
     if query == None:
         query = ''
 
-    products = Product.objects.filter(name__icontains=query)
+    vehicles = VehicleRental.objects.filter(name__icontains=query)
 
     page = request.query_params.get('page')
-    paginator = Paginator(products, 8)
+    paginator = Paginator(vehicles, 8)
 
     try:
-        products = paginator.page(page)
+        vehicles = paginator.page(page)
     except PageNotAnInteger:
-        products = paginator.page(1)
+        vehicles = paginator.page(1)
     except EmptyPage:
-        products = paginator.page(paginator.num_pages)
+        vehicles = paginator.page(paginator.num_pages)
 
     if page == None:
         page = 1
 
     page = int(page)
 
-    serializer = ProductSerializer(products, many=True)
+    serializer = VehicleRentalSerializer(vehicles, many=True)
     return Response({
-        'products':serializer.data,
+        'vehicles':serializer.data,
         'page':page,
         'pages':paginator.num_pages
     })
@@ -56,17 +56,17 @@ def getProducts(request):
 #====================================================
 
 @api_view(['GET'])
-def getTopProducts(request):
-    products = Product.objects.filter(rating__gt=4).order_by('-rating')[0:5]
-    serializer = ProductSerializer(products, many=True)
+def getTopVehicle(request):
+    vehicles = VehicleRental.objects.filter(rating__gt=4).order_by('-rating')[0:5]
+    serializer = VehicleRentalSerializer(vehicles, many=True)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['GET'])
-def getProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    serializer = ProductSerializer(product, many=False)
+def getVehicle(request, pk):
+    vehicle = VehicleRental.objects.get(id=pk)
+    serializer = VehicleRentalSerializer(vehicle, many=False)
     
     return Response(serializer.data)
 
@@ -74,50 +74,50 @@ def getProduct(request, pk):
 
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
-def updateProduct(request, pk):
+def updateVehicle(request, pk):
     data = request.data
-    product = Product.objects.get(_id=pk)
+    vehicle = VehicleRental.objects.get(id=pk)
 
-    product.name = data['name']
-    product.price = data['price']
-    product.brand = data['brand']
-    product.countInStock = data['countInStock']
-    product.category = data['category']
-    product.description = data['description']
+    vehicle.name = data['name']
+    vehicle.price = data['price']
+    vehicle.brand = data['brand']
+    vehicle.countInStock = data['countInStock']
+    vehicle.category = data['category']
+    vehicle.description = data['description']
 
-    product.save()
+    vehicle.save()
 
-    serializer = ProductSerializer(product, many=False)  
+    serializer = VehicleRentalSerializer(vehicle, many=False)  
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
-def createProduct(request):
+def createVehicle(request):
     user = request.user
 
-    product = Product.objects.create(
+    vehicle = VehicleRental.objects.create(
         user=user,
         name='Sample Name',
-        price=0,
-        brand='Sample Brand',
-        countInStock=0,
-        category='Sample Category',
+        images='',
+        videos='Sample Brand',
         description='',
+        price=0,
+        reviews='',
     )
 
-    serializer = ProductSerializer(product, many=False)
+    serializer = VehicleRentalSerializer(vehicle, many=False)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['DELETE'])
 @permission_classes([IsAdminUser])
-def deleteProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    product.delete()    
-    return Response('Product Deleted')
+def deleteVehicle(request, pk):
+    vehicle = VehicleRental.objects.get(id=pk)
+    vehicle.delete()    
+    return Response('vehicle Deleted')
 
 
 #====================================================
@@ -126,11 +126,11 @@ def deleteProduct(request, pk):
 def uploadImage(request):
     data = request.data
 
-    product_id = data['product_id']
-    product = Product.objects.get(_id=product_id)
+    vehicle_id = data['vehicle_id']
+    vehicle = VehicleRental.objects.get(id=vehicle_id)
 
-    product.image = request.FILES.get('image')
-    product.save()
+    vehicle.image = request.FILES.get('image')
+    vehicle.save()
     
     return Response('Image was uploaded')
 
@@ -138,16 +138,16 @@ def uploadImage(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def createProductReview(request, pk):
+def createVehicleReview(request, pk):
     user = request.user
-    product = Product.objects.get(_id=pk)
+    vehicle = VehicleRental.objects.get(id=pk)
     data = request.data
 
     #1 - Review already exists
-    alreadyExists = product.review_set.filter(user=user).exists()
+    alreadyExists = VehicleRental.review_set.filter(user=user).exists()
 
     if alreadyExists:
-        content = {'detail':'Product already reviewed'}
+        content = {'detail':'vehicle already reviewed'}
         return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
     #2 - No Raiting or 0
@@ -159,21 +159,21 @@ def createProductReview(request, pk):
     else:
         review = Review.objects.create(
             user=user,
-            product=product,
+            vehicle=vehicle,
             name=user.first_name,
             rating=data['rating'],
             comment=data['comment'],
         )
 
-        reviews = product.review_set.all()
-        product.numReviews = len(reviews)
+        reviews = VehicleRental.review_set.all()
+        vehicle.numReviews = len(reviews)
 
         total = 0
         for i in reviews:
             total += i.rating
 
-        product.rating = total / len(reviews)
-        product.save()
+        vehicle.rating = total / len(reviews)
+        vehicle.save()
 
         return Response('Review Added')
 

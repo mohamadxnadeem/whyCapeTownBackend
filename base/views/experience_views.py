@@ -57,7 +57,7 @@ def getExperiences(request):
 
 @api_view(['GET'])
 def getTopExperiences(request):
-    experiences = Experience.objects.filter(rating__gt=4).order_by('-rating')[0:5]
+    experience = Experience.objects.filter(rating__gt=4).order_by('-rating')[0:5]
     serializer = ExperienceSerializer(experience, many=True)
     return Response(serializer.data)
 
@@ -105,7 +105,7 @@ def createExperience(request):
         description='',
     )
 
-    serializer = ExperienceSerializer(product, many=False)
+    serializer = ExperienceSerializer(experience, many=False)
     return Response(serializer.data)
 
 #====================================================

@@ -15,6 +15,8 @@ class Experience(models.Model):
     videos = ArrayField(models.CharField(max_length=200), blank=True, default=list)
     description = models.TextField()
     price = models.DecimalField(max_digits=6, decimal_places=2)
+    rating = models.IntegerField(null=True, blank=True, default=0)
+
 
 
     def __str__(self):
@@ -61,7 +63,7 @@ class Booking(models.Model):
         return str(self.id)
 
 
-class BlogPost(models.Model):
+class Blog(models.Model):
     title = models.CharField(max_length=200, null=True)
     image = models.ImageField(upload_to='images/',  null=True)
     content = models.TextField( null=True)

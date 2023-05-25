@@ -13,8 +13,8 @@ from rest_framework import status
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from base.models import Product, Review
-from base.serializers import ProductSerializer
+from base.models import Blog, Review
+from base.serializers import BlogSerializer
 
 #====================================================
 
@@ -23,32 +23,32 @@ from base.serializers import ProductSerializer
 #====================================================
 
 @api_view(['GET'])
-def getProducts(request):
+def getBlogs(request):
     query = request.query_params.get('keyword')
 
     if query == None:
         query = ''
 
-    products = Product.objects.filter(name__icontains=query)
+    blogs = Blog.objects.filter(title__icontains=query)
 
     page = request.query_params.get('page')
-    paginator = Paginator(products, 8)
+    paginator = Paginator(blogs, 8)
 
     try:
-        products = paginator.page(page)
+        blogs = paginator.page(page)
     except PageNotAnInteger:
-        products = paginator.page(1)
+        blogs = paginator.page(1)
     except EmptyPage:
-        products = paginator.page(paginator.num_pages)
+        blogs = paginator.page(paginator.num_pages)
 
     if page == None:
         page = 1
 
     page = int(page)
 
-    serializer = ProductSerializer(products, many=True)
+    serializer = BlogSerializer(blogs, many=True)
     return Response({
-        'products':serializer.data,
+        'blogs':serializer.data,
         'page':page,
         'pages':paginator.num_pages
     })
@@ -56,17 +56,17 @@ def getProducts(request):
 #====================================================
 
 @api_view(['GET'])
-def getTopProducts(request):
-    products = Product.objects.filter(rating__gt=4).order_by('-rating')[0:5]
-    serializer = ProductSerializer(products, many=True)
+def getTopBlogs(request):
+    blogs = Blogs.objects.filter(rating__gt=4).order_by('-rating')[0:5]
+    serializer = BlogSerializer(products, many=True)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['GET'])
-def getProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    serializer = ProductSerializer(product, many=False)
+def getBlog(request, pk):
+    blog = Blog.objects.get(_id=pk)
+    serializer = BlogSerializer(blog, many=False)
     
     return Response(serializer.data)
 
@@ -74,50 +74,46 @@ def getProduct(request, pk):
 
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
-def updateProduct(request, pk):
+def updateBlog(request, pk):
     data = request.data
-    product = Product.objects.get(_id=pk)
+    blog = Blog.objects.get(_id=pk)
 
-    product.name = data['name']
-    product.price = data['price']
-    product.brand = data['brand']
-    product.countInStock = data['countInStock']
-    product.category = data['category']
-    product.description = data['description']
+    blog.title = data['title']
+    blog.image = data['image']
+    blog.content = data['content']
 
-    product.save()
 
-    serializer = ProductSerializer(product, many=False)  
+    blog.save()
+
+    serializer = BlogSerializer(blog, many=False)  
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
-def createProduct(request):
+def createBlog(request):
     user = request.user
 
-    product = Product.objects.create(
+    blog = Blog.objects.create(
         user=user,
-        name='Sample Name',
-        price=0,
-        brand='Sample Brand',
-        countInStock=0,
-        category='Sample Category',
-        description='',
+        title='Sample Name',
+        image='',
+        content='Sample Brand',
+       
     )
 
-    serializer = ProductSerializer(product, many=False)
+    serializer = BlogSerializer(product, many=False)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['DELETE'])
 @permission_classes([IsAdminUser])
-def deleteProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    product.delete()    
-    return Response('Product Deleted')
+def deleteBlog(request, pk):
+    blog = Blog.objects.get(_id=pk)
+    blog.delete()    
+    return Response('blog Deleted')
 
 
 #====================================================
@@ -138,16 +134,16 @@ def uploadImage(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def createProductReview(request, pk):
+def createBlogReview(request, pk):
     user = request.user
-    product = Product.objects.get(_id=pk)
+    blog = Blog.objects.get(_id=pk)
     data = request.data
 
     #1 - Review already exists
-    alreadyExists = product.review_set.filter(user=user).exists()
+    alreadyExists = blog.review_set.filter(user=user).exists()
 
     if alreadyExists:
-        content = {'detail':'Product already reviewed'}
+        content = {'detail':'blog already reviewed'}
         return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
     #2 - No Raiting or 0
@@ -165,15 +161,15 @@ def createProductReview(request, pk):
             comment=data['comment'],
         )
 
-        reviews = product.review_set.all()
-        product.numReviews = len(reviews)
+        reviews = blog.review_set.all()
+        blog.numReviews = len(reviews)
 
         total = 0
         for i in reviews:
             total += i.rating
 
-        product.rating = total / len(reviews)
-        product.save()
+        blog.rating = total / len(reviews)
+        blog.save()
 
         return Response('Review Added')
 

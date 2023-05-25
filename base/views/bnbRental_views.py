@@ -13,8 +13,8 @@ from rest_framework import status
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from base.models import Product, Review
-from base.serializers import ProductSerializer
+from base.models import BnBRental, Review
+from base.serializers import BnbSerializer
 
 #====================================================
 
@@ -23,32 +23,32 @@ from base.serializers import ProductSerializer
 #====================================================
 
 @api_view(['GET'])
-def getProducts(request):
+def getBnBs(request):
     query = request.query_params.get('keyword')
 
     if query == None:
         query = ''
 
-    products = Product.objects.filter(name__icontains=query)
+    bnbs = BnBRental.objects.filter(name__icontains=query)
 
     page = request.query_params.get('page')
-    paginator = Paginator(products, 8)
+    paginator = Paginator(bnbs, 8)
 
     try:
-        products = paginator.page(page)
+        bnbs = paginator.page(page)
     except PageNotAnInteger:
-        products = paginator.page(1)
+        bnbs = paginator.page(1)
     except EmptyPage:
-        products = paginator.page(paginator.num_pages)
+        bnbs = paginator.page(paginator.num_pages)
 
     if page == None:
         page = 1
 
     page = int(page)
 
-    serializer = ProductSerializer(products, many=True)
+    serializer = BnbSerializer(bnbs, many=True)
     return Response({
-        'products':serializer.data,
+        'bnbs':serializer.data,
         'page':page,
         'pages':paginator.num_pages
     })
@@ -56,17 +56,17 @@ def getProducts(request):
 #====================================================
 
 @api_view(['GET'])
-def getTopProducts(request):
-    products = Product.objects.filter(rating__gt=4).order_by('-rating')[0:5]
-    serializer = ProductSerializer(products, many=True)
+def getTopBnBs(request):
+    bnbs = BnBRental.objects.filter(rating__gt=4).order_by('-rating')[0:5]
+    serializer = BnbSerializer(bnbs, many=True)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['GET'])
-def getProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    serializer = ProductSerializer(product, many=False)
+def getBnB(request, pk):
+    bnb = BnBRental.objects.get(_id=pk)
+    serializer = BnbSerializer(BnBRental, many=False)
     
     return Response(serializer.data)
 
@@ -74,30 +74,30 @@ def getProduct(request, pk):
 
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
-def updateProduct(request, pk):
+def updateBnB(request, pk):
     data = request.data
-    product = Product.objects.get(_id=pk)
+    bnb = BnBRental.objects.get(_id=pk)
 
-    product.name = data['name']
-    product.price = data['price']
-    product.brand = data['brand']
-    product.countInStock = data['countInStock']
-    product.category = data['category']
-    product.description = data['description']
+    bnb.name = data['name']
+    bnb.price = data['price']
+    bnb.brand = data['brand']
+    bnb.countInStock = data['countInStock']
+    bnb.category = data['category']
+    bnb.description = data['description']
 
-    product.save()
+    bnb.save()
 
-    serializer = ProductSerializer(product, many=False)  
+    serializer = BnbSerializer(bnb, many=False)  
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
-def createProduct(request):
+def createBnB(request):
     user = request.user
 
-    product = Product.objects.create(
+    BnBRental = BnBRental.objects.create(
         user=user,
         name='Sample Name',
         price=0,
@@ -107,17 +107,17 @@ def createProduct(request):
         description='',
     )
 
-    serializer = ProductSerializer(product, many=False)
+    serializer = BnbSerializer(bnb, many=False)
     return Response(serializer.data)
 
 #====================================================
 
 @api_view(['DELETE'])
 @permission_classes([IsAdminUser])
-def deleteProduct(request, pk):
-    product = Product.objects.get(_id=pk)
-    product.delete()    
-    return Response('Product Deleted')
+def deleteBnB(request, pk):
+    bnb = BnBRental.objects.get(_id=pk)
+    bnb.delete()    
+    return Response('bnb Deleted')
 
 
 #====================================================
@@ -126,11 +126,11 @@ def deleteProduct(request, pk):
 def uploadImage(request):
     data = request.data
 
-    product_id = data['product_id']
-    product = Product.objects.get(_id=product_id)
+    BnBRental_id = data['BnBRental_id']
+    BnBRental = BnBRental.objects.get(_id=BnBRental_id)
 
-    product.image = request.FILES.get('image')
-    product.save()
+    BnBRental.image = request.FILES.get('image')
+    BnBRental.save()
     
     return Response('Image was uploaded')
 
@@ -138,16 +138,16 @@ def uploadImage(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def createProductReview(request, pk):
+def createBnBReview(request, pk):
     user = request.user
-    product = Product.objects.get(_id=pk)
+    bnb = BnBRental.objects.get(_id=pk)
     data = request.data
 
     #1 - Review already exists
-    alreadyExists = product.review_set.filter(user=user).exists()
+    alreadyExists = BnBRental.review_set.filter(user=user).exists()
 
     if alreadyExists:
-        content = {'detail':'Product already reviewed'}
+        content = {'detail':'BnBRental already reviewed'}
         return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
     #2 - No Raiting or 0
@@ -159,21 +159,21 @@ def createProductReview(request, pk):
     else:
         review = Review.objects.create(
             user=user,
-            product=product,
+            bnb=bnb,
             name=user.first_name,
             rating=data['rating'],
             comment=data['comment'],
         )
 
-        reviews = product.review_set.all()
-        product.numReviews = len(reviews)
+        reviews = bnb.review_set.all()
+        bnb.numReviews = len(reviews)
 
         total = 0
         for i in reviews:
             total += i.rating
 
-        product.rating = total / len(reviews)
-        product.save()
+        BnBRental.rating = total / len(reviews)
+        BnBRental.save()
 
         return Response('Review Added')
 

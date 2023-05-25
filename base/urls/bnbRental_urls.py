@@ -3,13 +3,16 @@ from base.views import bnbRental_views as views
 
 
 urlpatterns = [
-    path('', views.getUsers, name='users'),
-    path('login/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('register/', views.registerUser, name='register'),
-    path('profile/', views.getUserProfile, name='users-profile'), 
-    path('profile/update/', views.updateUserProfile, name='user-profile-update'),
-    path('<str:pk>/', views.getUserById, name='user'),
-    path('update/<str:pk>/', views.updateUser, name='user-update'),
-    path('delete/<str:pk>/', views.deleteUser, name='user-delete'),
+    # View All:
+    path('', views.getBnBs, name='BnBs'),
+    # View Specific Item based on ID
+    path('<str:pk>/', views.getBnB, name='getBnB'),
+    # Create, update and delete:
+    path('createNewBnB/', views.createBnB, name='createNewBnB'),
+    path('update/<str:pk>/', views.updateBnB, name='user-update'),
+    path('delete/<str:pk>/', views.deleteBnB, name='user-delete'),
+    # Create new review:
+    path('<str:pk>/reviews/', views.createBnBReview, name='create-BnB-review'),
+
 
 ]
